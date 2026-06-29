@@ -13,6 +13,6 @@ async def create_card(payload: Card, service: CardService = Depends(get_card_ser
     return response
 
 @route.get("", response_model=ResponseList[CardResponse])
-async def get_all_cards(service: CardService = Depends(get_card_service)):
-    response = await service.get_all_cards()
+async def get_all_cards(service: CardService = Depends(get_card_service), slug: str = None):
+    response = await service.get_all_cards(slug=slug)
     return response

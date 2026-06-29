@@ -1,6 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException, status
 from bson import ObjectId
+from typing import Optional
 
 from src.schemas.card import CardResponse, CardWithCardId
 from src.schemas.common import ResponseData, ResponseList
@@ -34,9 +35,21 @@ class CardService:
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         
-    async def get_all_cards(self) -> ResponseList[CardResponse]:
+    async def get_all_cards(self, slug:Optional[str]) -> ResponseList[CardResponse]:
         try:
-            results = await self.db.cards.aggregate(card_with_category_lookup).to_list()
+            results = None
+            if slug is not None:
+                find_by_slug_pipline = [
+                    {
+                        "$match": {
+                            "slug": slug
+                        }
+                    },
+                    *card_with_category_lookup
+                ]
+                results = await self.db.cards.aggregate(find_by_slug_pipline).to_list()
+            else:
+                results = await self.db.cards.aggregate(card_with_category_lookup).to_list()
             if len(results) == 0:
                 return ResponseList(data=[], status=200, total=0, message="No data found")
             
