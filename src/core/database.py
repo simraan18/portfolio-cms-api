@@ -30,7 +30,7 @@ async def connect_db():
             settings.database_url,
             settings.database_name
         )
-        print("Database connected!")
+        print("✅ Database connected!")
     except Exception as e:
         print(e)
 
@@ -42,3 +42,6 @@ async def get_db():
 
 async def create_index_card_category_slug(db: AsyncIOMotorDatabase):
     await db.cardCategories.create_index("slug", unique=True)
+
+async def create_index_user_name(db: AsyncIOMotorDatabase):
+    await db.users.create_index("username", unique=True)

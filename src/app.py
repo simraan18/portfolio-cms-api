@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.routes.routes import app_routes
-from src.core.database import connect_db, close_db, database, create_index_card_category_slug
+from src.core.database import connect_db, close_db, database, create_index_card_category_slug, create_index_user_name
 from src.core.redis import redis
 
 @asynccontextmanager
@@ -13,6 +13,7 @@ async def lifespan(app: FastAPI):
 
     db = database.db
     await create_index_card_category_slug(db)
+    # await create_index_user_name(db)
 
     await redis.ping()
     print("✅ Connected to Redis")
@@ -33,17 +34,17 @@ app.include_router(app_routes, prefix="/api/v1")
 
 
 # Global Exceptions Handler
-@app.exception_handler(StarletteHTTPException)
-async def custom_http_exception_handler(
-    request: Request,
-    exc: StarletteHTTPException
-):
-    if exc.status_code == 404:
-        return RedirectResponse(url="/docs")
+# @app.exception_handler(StarletteHTTPException)
+# async def custom_http_exception_handler(
+#     request: Request,
+#     exc: StarletteHTTPException
+# ):
+#     if exc.status_code == 404:
+#         return RedirectResponse(url="/docs")
 
-    return JSONResponse(
-        status_code=exc.status_code if exc.status_code is not None else 500,
-        content={
-            "message": exc
-        }
-    )
+#     return JSONResponse(
+#         status_code=exc.status_code if exc.status_code is not None else 500,
+#         content={
+#             "message": str(exc)
+#         }
+#     )

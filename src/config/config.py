@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     redis_url: str
     cache_expire: int
 
+    jwt_secret: str
+    jwt_algorithm: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
