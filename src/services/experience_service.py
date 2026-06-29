@@ -1,10 +1,14 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException, status
 from bson import ObjectId
+import json
 
 from src.schemas.common import ResponseList, ResponseData
 from src.schemas.experience import ExperienceResponse
 from src.utils.normalize_doc import normalize
+from src.core.redis import redis
+from src.constants.redis_constants import experience_cache_key
+from src.config.config import settings
 
 
 class ExperienceService:
@@ -14,6 +18,10 @@ class ExperienceService:
 
     async def get_all_experience(self) -> ResponseList[ExperienceResponse]:
         try:
+            cached_results = await redis.get(experience_cache_key)
+            if cached_results is not None:
+                data = json.loads(cached_results)
+                return ResponseList[ExperienceResponse](data=data, status=200, total=len(data))
             expereriences = []
             results = await self.db.experiences.find().to_list()
             if len(results) == 0:
@@ -22,6 +30,12 @@ class ExperienceService:
                 item['id'] = str(item["_id"])
                 del item['_id']
                 expereriences.append(item)
+            expereriences_cache_str = json.dumps(expereriences)
+            await redis.set(
+                experience_cache_key,
+                expereriences_cache_str,
+                settings.cache_expire
+            )
             return ResponseList[ExperienceResponse](data=expereriences, status=200, total=len(expereriences))
         except Exception as e:
             raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -43,6 +57,8 @@ class ExperienceService:
                 technologies = doc['technologies'],
                 isCurrent = doc['isCurrent']
             )
+            # Invalidate cache
+            await redis.delete(experience_cache_key)
             return ResponseData[ExperienceResponse](data=res, status=200, message="Experience created successfully")
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
@@ -64,6 +80,8 @@ class ExperienceService:
                 startDate = doc['startDate'],
                 technologies = doc['technologies']
             )
+              # Invalidate cache
+            await redis.delete(experience_cache_key)
             return ResponseData[ExperienceResponse](data=response, status=200, message="Experience updated successfully")
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))

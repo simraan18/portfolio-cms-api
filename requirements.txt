@@ -5,3 +5,4 @@ pydantic-settings>=2.14.2
 python-dotenv>=1.2.2
 uvicorn>=0.49.0
 pydantic[email]>=2.13.4
+redis[hiredis]>=6.2.0

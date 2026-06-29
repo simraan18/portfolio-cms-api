@@ -5,7 +5,7 @@ from typing import Optional
 
 from src.schemas.card import CardResponse, CardWithCardId
 from src.schemas.common import ResponseData, ResponseList
-from src.utils.aggregations import card_with_category_lookup
+from src.utils.aggregations import card_with_category_lookup, card_with_field_match
 from src.schemas.card_category import CardCategoryResponse
 
 class CardService:
@@ -40,11 +40,7 @@ class CardService:
             results = None
             if slug is not None:
                 find_by_slug_pipline = [
-                    {
-                        "$match": {
-                            "slug": slug
-                        }
-                    },
+                    card_with_field_match("slug", slug),
                     *card_with_category_lookup
                 ]
                 results = await self.db.cards.aggregate(find_by_slug_pipline).to_list()

@@ -11,3 +11,9 @@ card_with_category_lookup = [
         "$unwind": "$category"
     }
 ]
+
+card_with_field_match = lambda field, value: {
+        "$match": {
+            field: value
+        }
+}

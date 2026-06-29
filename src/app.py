@@ -5,6 +5,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.routes.routes import app_routes
 from src.core.database import connect_db, close_db, database, create_index_card_category_slug
+from src.core.redis import redis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -13,8 +14,13 @@ async def lifespan(app: FastAPI):
     db = database.db
     await create_index_card_category_slug(db)
 
+    await redis.ping()
+    print("✅ Connected to Redis")
+
     yield
     await close_db()
+
+    await redis.aclose()
 
 # App
 app = FastAPI(lifespan=lifespan)
