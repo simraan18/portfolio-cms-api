@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordRequestForm
 
 from src.services.auth_service import AuthService
 from src.dependencies.auth_dependency import get_auth_service
@@ -13,5 +12,5 @@ async def sign_up(payload: Auth, service: AuthService = Depends(get_auth_service
     return await service.create_user(payload.model_dump())
 
 @route.post("/sign-in")
-async def sign_in(form_data: OAuth2PasswordRequestForm = Depends(), service: AuthService = Depends(get_auth_service)):
-    return await service.sign_in(form_data)
+async def sign_in(payload: Auth, service: AuthService = Depends(get_auth_service)):
+    return await service.sign_in(payload.model_dump())

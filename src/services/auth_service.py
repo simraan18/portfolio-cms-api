@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
@@ -30,41 +30,44 @@ class AuthService:
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         
-    async def sign_in(self, form_data: OAuth2PasswordRequestForm = Depends()):
+    async def sign_in(self, payload: dict = Depends()):
         try:
-            user = await self.db.users.find_one({"username": form_data.username})
+            user = await self.db.users.find_one({"username": payload['username']})
             if not user:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Authentication credentials not found")
-            if not self.bcrypt_context.verify(form_data.password, user['password']):
+            if not self.bcrypt_context.verify(payload['password'], user['password']):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Authentication credentials not found")
             jwt_payload = {
                 "sub": user['username'],
                 "id": str(user['_id']),
                 "exp": datetime.now() + timedelta(days=7)
             }
-            access_token = self.create_access_token(jwt_payload)
-            token = await self.securely_store_token(access_token, user, self.db)
+            access_token = AuthService.create_access_token(jwt_payload)
+            token = await AuthService.securely_store_token(access_token, user, self.db)
             return ResponseData[dict](data={"access_token": token}, status=status.HTTP_200_OK, message="User signed in successfully")
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-        
-    def create_access_token(self, data: dict):
+
+    @staticmethod    
+    def create_access_token(data: dict):
         try:
             to_encode = data.copy()
             return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-        
-    def encode_token(self, token: str, secret_key: bytes):
+
+    @staticmethod    
+    def encode_token(token: str, secret_key: bytes):
         cipher = Fernet(secret_key)
         text_bytes = token.encode('utf-8')
         encoded_bytes = cipher.encrypt(text_bytes)
         encoded_text = encoded_bytes.decode('utf-8')
         return encoded_text
-        
-    async def securely_store_token(self, token: str, user: dict, db: AsyncIOMotorDatabase):
+
+    @staticmethod    
+    async def securely_store_token(token: str, user: dict, db: AsyncIOMotorDatabase):
         secret_key = Fernet.generate_key()
-        encoded_text = self.encode_token(token, secret_key)
+        encoded_text = AuthService.encode_token(token, secret_key)
         await db.UserTokens.delete_one({"user_id": str(user['_id'])})
         await db.UserTokens.insert_one({
             "user_id": str(user['_id']),
