@@ -4,6 +4,7 @@ from src.services.experience_service import ExperienceService
 from src.dependencies.experience_service_dependency import get_experience_service
 from src.schemas.common import ResponseList, ResponseData
 from src.schemas.experience import ExperienceResponse, Experience
+from src.dependencies.auth_dependency import get_current_user
 
 route = APIRouter(prefix="/experience", tags=["experience"])
 
@@ -13,11 +14,11 @@ async def get_all_experience(service: ExperienceService = Depends(get_experience
     return response
 
 @route.post("", response_model=ResponseData[ExperienceResponse])
-async def create_experience(payload: Experience, service: ExperienceService = Depends(get_experience_service)):
+async def create_experience(payload: Experience, service: ExperienceService = Depends(get_experience_service), user = Depends(get_current_user)):
     response = await service.create_experience(payload.model_dump())
     return response
 
 @route.put("/{id}", response_model=ResponseData[ExperienceResponse])
-async def update_experience(id: str, payload: Experience, service: ExperienceService = Depends(get_experience_service)):
+async def update_experience(id: str, payload: Experience, service: ExperienceService = Depends(get_experience_service), user = Depends(get_current_user)):
     response = await service.update_experience(id, payload.model_dump())
     return response

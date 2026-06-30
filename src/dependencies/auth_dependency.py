@@ -30,7 +30,6 @@ async def get_current_user(
         user_token = await db.UserTokens.find_one({"user_id": user_id})
         cipher = Fernet(secret_key)
         decoded_bytes = cipher.decrypt(user_token['hashed_token'])
-        cipher._verify_signature
         jwt_token = decoded_bytes.decode('utf-8')
         payload = verify_token(jwt_token)
         if payload is None:

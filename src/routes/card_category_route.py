@@ -11,7 +11,7 @@ route = APIRouter(prefix="/card-category", tags=["card-category"])
 
 
 @route.post("", response_model=ResponseData[CardCategoryResponse])
-async def create_card_category(payload: CardCategory, service: CardCategoryService = Depends(get_card_category_service)):
+async def create_card_category(payload: CardCategory, service: CardCategoryService = Depends(get_card_category_service), user = Depends(get_current_user)):
     response = await service.create_card_category(payload.model_dump())
     return response
 
